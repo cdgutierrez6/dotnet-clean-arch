@@ -1,0 +1,15 @@
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+*.log
+*.env
+appsettings.Development.json
+appsettings.Local.json
+.DS_Store
+Thumbs.db
+TestResults/
+coverage/
+*.nupkg

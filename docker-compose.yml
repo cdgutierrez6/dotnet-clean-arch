@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: cleanarch-postgres
+    environment:
+      POSTGRES_DB: cleanarch_db
+      POSTGRES_USER: cleanarch_user
+      POSTGRES_PASSWORD: cleanarch_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - cleanarch-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: cleanarch-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - cleanarch-net
+
+  api:
+    build:
+      context: .
+      dockerfile: src/CleanArch.WebApi/Dockerfile
+    container_name: cleanarch-api
+    ports:
+      - "5001:80"
+      - "7001:443"
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=cleanarch_db;Username=cleanarch_user;Password=cleanarch_pass"
+      ConnectionStrings__Redis: "redis:6379"
+      ASPNETCORE_ENVIRONMENT: Development
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - cleanarch-net
+
+networks:
+  cleanarch-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
