@@ -1,5 +1,6 @@
 using CleanArch.Application.Commands.RegisterUser;
 using CleanArch.Application.Services;
+using CleanArch.Domain.Entities;
 using CleanArch.Domain.Repositories;
 using FluentAssertions;
 using Moq;
@@ -31,7 +32,7 @@ public sealed class RegisterUserHandlerTests
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeEmpty();
 
-        _userRepo.Verify(r => r.AddAsync(It.IsAny<Domain.Entities.User>(), default), Times.Once);
+        _userRepo.Verify(r => r.AddAsync(It.IsAny<User>(), default), Times.Once);
         _unitOfWork.Verify(u => u.SaveChangesAsync(default), Times.Once);
     }
 
@@ -46,6 +47,6 @@ public sealed class RegisterUserHandlerTests
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Contain("already registered");
 
-        _userRepo.Verify(r => r.AddAsync(It.IsAny<Domain.Entities.User>(), default), Times.Never);
+        _userRepo.Verify(r => r.AddAsync(It.IsAny<User>(), default), Times.Never);
     }
 }
