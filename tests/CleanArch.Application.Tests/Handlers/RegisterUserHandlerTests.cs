@@ -3,6 +3,7 @@ using CleanArch.Application.Services;
 using CleanArch.Domain.Repositories;
 using FluentAssertions;
 using Moq;
+using Xunit;
 
 namespace CleanArch.Application.Tests.Handlers;
 
