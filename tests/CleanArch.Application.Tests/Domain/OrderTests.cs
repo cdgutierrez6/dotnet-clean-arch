@@ -2,6 +2,7 @@ using CleanArch.Domain.Entities;
 using CleanArch.Domain.Events;
 using CleanArch.Domain.Exceptions;
 using FluentAssertions;
+using Xunit;
 
 namespace CleanArch.Application.Tests.Domain;
 
