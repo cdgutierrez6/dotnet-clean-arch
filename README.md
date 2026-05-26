@@ -18,29 +18,36 @@ Reference template for enterprise APIs in **.NET 8** with Clean Architecture, CQ
 
 ### Architecture Layers
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                    PRESENTATION LAYER                         │
-│              WebApi (Controllers, Middlewares)                │
-└────────────────────────┬───────────────────────────────────────┘
-                         │ DTOs / Requests / Responses
-┌────────────────────────▼───────────────────────────────────────┐
-│                    APPLICATION LAYER                          │
-│    Commands / Queries (CQRS) · Handlers · Validators         │
-│    MediatR · FluentValidation · Pipeline Behaviors           │
-└────────────────────────┬───────────────────────────────────────┘
-                         │ Interfaces / Domain Models
-┌────────────────────────▼───────────────────────────────────────┐
-│                     DOMAIN LAYER                              │
-│    Entities · Value Objects · Domain Events                  │
-│    Aggregates · Repository Interfaces · Business Rules       │
-└────────────────────────┬───────────────────────────────────────┘
-                         │ Implementations
-┌────────────────────────▼───────────────────────────────────────┐
-│                  INFRASTRUCTURE LAYER                         │
-│    EF Core · Repositories · External Services               │
-│    Email · File Storage · Cache (Redis)                      │
-└────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph PRES["🌐 Presentation Layer"]
+        WA["WebApi\nControllers · Middleware · Swagger"]
+    end
+    subgraph APP["⚙️ Application Layer"]
+        CMD["Commands / Queries\nCQRS + MediatR"]
+        BH["Pipeline Behaviors\nValidation · Logging · Stopwatch"]
+    end
+    subgraph DOM["🏛️ Domain Layer — zero external dependencies"]
+        ENT["Entities · Value Objects\nOrder · User · Email · Money"]
+        EVT["Domain Events\nOrderCreated · UserRegistered"]
+        REPO["Repository Interfaces\nIOrderRepository · IUserRepository"]
+    end
+    subgraph INF["🗄️ Infrastructure Layer"]
+        EFC["EF Core 8\nRepositories · AppDbContext · Migrations"]
+        SVC["PasswordHasher · Cache · Email"]
+    end
+
+    WA -->|"DTOs / Requests"| CMD
+    CMD --> BH
+    CMD -->|"Domain Models"| ENT
+    CMD -->|"Interfaces"| REPO
+    EFC -.->|"implements"| REPO
+    EFC --> ENT
+
+    style PRES fill:#8B0000,color:#fff
+    style APP fill:#006400,color:#fff
+    style DOM fill:#00008B,color:#fff
+    style INF fill:#4B0082,color:#fff
 ```
 
 ---
@@ -54,14 +61,14 @@ dotnet-clean-arch/
 │   │   ├── Entities/
 │   │   │   ├── BaseEntity.cs          # Domain events list
 │   │   │   ├── User.cs
-│   │   │   └── Order.cs               # State machine (PENDING→CONFIRMED→SHIPPED)
+│   │   │   └── Order.cs               # State machine PENDING→CONFIRMED→SHIPPED
 │   │   ├── ValueObjects/
 │   │   │   ├── Email.cs               # Immutable record with regex validation
 │   │   │   └── Money.cs               # Immutable record with currency
 │   │   ├── Events/
 │   │   │   ├── OrderCreatedEvent.cs
 │   │   │   └── UserRegisteredEvent.cs
-│   │   ├── Repositories/              ← Interfaces only (no implementations)
+│   │   ├── Repositories/              ← Interfaces only (no implementations here)
 │   │   │   ├── IUserRepository.cs
 │   │   │   └── IOrderRepository.cs
 │   │   └── Exceptions/
@@ -86,16 +93,13 @@ dotnet-clean-arch/
 │   │   │   ├── ValidationBehavior.cs  ← MediatR pipeline
 │   │   │   └── LoggingBehavior.cs     ← Stopwatch per request
 │   │   └── Common/
-│   │       └── Result.cs              ← Result<T> pattern (no exceptions)
+│   │       └── Result.cs              ← Result<T> (no exceptions for business errors)
 │   │
 │   ├── CleanArch.Infrastructure/      ← Technical implementations
 │   │   ├── Persistence/
 │   │   │   ├── AppDbContext.cs        # Dispatches domain events post-SaveChanges
 │   │   │   ├── Configurations/        # IEntityTypeConfiguration per entity
-│   │   │   ├── Repositories/
-│   │   │   │   ├── UserRepository.cs
-│   │   │   │   └── OrderRepository.cs
-│   │   │   └── Migrations/
+│   │   │   └── Repositories/
 │   │   ├── Services/
 │   │   │   └── PasswordHasher.cs      # PBKDF2-SHA256 with salt
 │   │   └── DependencyInjection.cs
@@ -105,13 +109,12 @@ dotnet-clean-arch/
 │       │   ├── OrdersController.cs
 │       │   └── UsersController.cs
 │       ├── Middleware/
-│       │   └── ErrorHandlingMiddleware.cs  # 422/404/400 by exception type
-│       ├── Program.cs                 # Serilog + auto-migrate on dev
-│       └── appsettings.json
+│       │   └── ErrorHandlingMiddleware.cs  # 422 / 404 / 400 by exception type
+│       └── Program.cs                 # Serilog + auto-migrate on dev
 │
 └── tests/
-    ├── CleanArch.Domain.Tests/        # Pure domain logic (no mocks needed)
-    ├── CleanArch.Application.Tests/   # Handlers with Moq + FluentAssertions
+    ├── CleanArch.Domain.Tests/        # Pure domain logic — no mocks needed
+    ├── CleanArch.Application.Tests/   # Handlers — Moq + FluentAssertions
     └── CleanArch.Integration.Tests/   # EF Core + SQLite in-memory
 ```
 
@@ -132,9 +135,7 @@ cd dotnet-clean-arch
 docker-compose up -d
 
 # API available at:
-# https://localhost:7001
-# http://localhost:5001
-# Swagger UI: https://localhost:7001/swagger
+# https://localhost:7001/swagger
 ```
 
 #### Run without Docker
@@ -144,7 +145,9 @@ docker-compose up -d
 docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=dev123 postgres:15
 
 # Apply migrations
-dotnet ef database update --project src/CleanArch.Infrastructure --startup-project src/CleanArch.WebApi
+dotnet ef database update \
+  --project src/CleanArch.Infrastructure \
+  --startup-project src/CleanArch.WebApi
 
 # Run the API
 dotnet run --project src/CleanArch.WebApi
@@ -162,25 +165,24 @@ dotnet run --project src/CleanArch.WebApi
 | **Unit of Work** | EF Core | Atomic transactions |
 | **Domain Events** | MediatR | Decoupled side effects |
 | **Result Pattern** | Custom | Error handling without exceptions |
-| **Value Objects** | Domain | Immutability and validation |
+| **Value Objects** | Domain | Immutability and self-validation |
 
 ---
 
 ### CQRS Example
 
 ```csharp
-// Command
+// Command — plain record, no logic
 public record CreateOrderCommand(
     Guid UserId,
     List<OrderItemDto> Items
 ) : IRequest<Result<Guid>>;
 
-// Handler
+// Handler — all business logic lives here
 public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(
-        CreateOrderCommand request,
-        CancellationToken cancellationToken)
+        CreateOrderCommand request, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetByIdAsync(request.UserId);
         if (user is null)
@@ -190,8 +192,8 @@ public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, Result<Gui
 
         await _orderRepository.AddAsync(order);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
         // Domain events dispatched automatically after SaveChanges
+
         return Result.Success(order.Id);
     }
 }
@@ -202,11 +204,58 @@ public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, Result<Gui
 ### Running Tests
 
 ```bash
-# Run all tests
+# Run all test projects
 dotnet test
 
-# With code coverage
-dotnet test --collect:"XPlat Code Coverage"
+# Verbose output with test names
+dotnet test --verbosity normal
+
+# With code coverage (generates XML report)
+dotnet test --collect:"XPlat Code Coverage" --results-directory ./coverage
+
+# Run a specific project
+dotnet test tests/CleanArch.Application.Tests
+dotnet test tests/CleanArch.Domain.Tests
+
+# Watch mode — re-runs on every file save
+dotnet watch test --project tests/CleanArch.Application.Tests
+```
+
+| Test project | Type | Tools | What it covers |
+|---|---|---|---|
+| `CleanArch.Domain.Tests` | Unit | xUnit | Value Objects, Order state machine, domain rules — zero mocks needed |
+| `CleanArch.Application.Tests` | Unit | xUnit + Moq + FluentAssertions | Command/Query handlers, validation behaviors |
+| `CleanArch.Integration.Tests` | Integration | EF Core + SQLite in-memory | Repository implementations, DB constraints |
+
+**Example test:**
+
+```csharp
+[Fact]
+public void Order_Confirm_WhenPending_ShouldTransitionToConfirmed()
+{
+    // Arrange
+    var order = Order.Create(Guid.NewGuid(), new List<OrderItem>
+    {
+        OrderItem.Create("Product A", 2, Money.From(10.00m, "USD"))
+    });
+
+    // Act
+    order.Confirm();
+
+    // Assert
+    order.Status.Should().Be(OrderStatus.Confirmed);
+    order.UpdatedAt.Should().NotBeNull();
+}
+
+[Theory]
+[InlineData("valid@email.com", true)]
+[InlineData("not-an-email", false)]
+[InlineData("", false)]
+public void Email_Validation_ShouldMatchExpected(string value, bool isValid)
+{
+    var result = Email.TryCreate(value, out var email);
+    result.Should().Be(isValid);
+}
 ```
 
 ---
@@ -250,29 +299,36 @@ Template de referencia para APIs enterprise en **.NET 8** con Clean Architecture
 
 ### Capas de la Arquitectura
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                    PRESENTATION LAYER                         │
-│              WebApi (Controllers, Middlewares)                │
-└────────────────────────┬───────────────────────────────────────┘
-                         │ DTOs / Requests / Responses
-┌────────────────────────▼───────────────────────────────────────┐
-│                    APPLICATION LAYER                          │
-│    Commands / Queries (CQRS) · Handlers · Validators         │
-│    MediatR · FluentValidation · Pipeline Behaviors           │
-└────────────────────────┬───────────────────────────────────────┘
-                         │ Interfaces / Domain Models
-┌────────────────────────▼───────────────────────────────────────┐
-│                     DOMAIN LAYER                              │
-│    Entities · Value Objects · Domain Events                  │
-│    Aggregates · Repository Interfaces · Business Rules       │
-└────────────────────────┬───────────────────────────────────────┘
-                         │ Implementations
-┌────────────────────────▼───────────────────────────────────────┐
-│                  INFRASTRUCTURE LAYER                         │
-│    EF Core · Repositories · Servicios Externos              │
-│    Email · File Storage · Cache (Redis)                      │
-└────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph PRES["🌐 Capa de Presentación"]
+        WA["WebApi\nControllers · Middleware · Swagger"]
+    end
+    subgraph APP["⚙️ Capa de Aplicación"]
+        CMD["Commands / Queries\nCQRS + MediatR"]
+        BH["Pipeline Behaviors\nValidación · Logging · Stopwatch"]
+    end
+    subgraph DOM["🏛️ Capa de Dominio — sin dependencias externas"]
+        ENT["Entities · Value Objects\nOrder · User · Email · Money"]
+        EVT["Domain Events\nOrderCreated · UserRegistered"]
+        REPO["Interfaces de Repositorio\nIOrderRepository · IUserRepository"]
+    end
+    subgraph INF["🗄️ Capa de Infraestructura"]
+        EFC["EF Core 8\nRepositories · AppDbContext · Migrations"]
+        SVC["PasswordHasher · Cache · Email"]
+    end
+
+    WA -->|"DTOs / Requests"| CMD
+    CMD --> BH
+    CMD -->|"Domain Models"| ENT
+    CMD -->|"Interfaces"| REPO
+    EFC -.->|"implementa"| REPO
+    EFC --> ENT
+
+    style PRES fill:#8B0000,color:#fff
+    style APP fill:#006400,color:#fff
+    style DOM fill:#00008B,color:#fff
+    style INF fill:#4B0082,color:#fff
 ```
 
 ---
@@ -286,14 +342,14 @@ dotnet-clean-arch/
 │   │   ├── Entities/
 │   │   │   ├── BaseEntity.cs          # Lista de domain events
 │   │   │   ├── User.cs
-│   │   │   └── Order.cs               # Máquina de estados (PENDING→CONFIRMED→SHIPPED)
+│   │   │   └── Order.cs               # Máquina de estados PENDING→CONFIRMED→SHIPPED
 │   │   ├── ValueObjects/
 │   │   │   ├── Email.cs               # Record inmutable con validación regex
 │   │   │   └── Money.cs               # Record inmutable con moneda
 │   │   ├── Events/
 │   │   │   ├── OrderCreatedEvent.cs
 │   │   │   └── UserRegisteredEvent.cs
-│   │   ├── Repositories/              ← Solo interfaces (sin implementaciones)
+│   │   ├── Repositories/              ← Solo interfaces (sin implementaciones aquí)
 │   │   │   ├── IUserRepository.cs
 │   │   │   └── IOrderRepository.cs
 │   │   └── Exceptions/
@@ -303,47 +359,33 @@ dotnet-clean-arch/
 │   ├── CleanArch.Application/         ← Casos de uso (CQRS)
 │   │   ├── Commands/
 │   │   │   ├── CreateOrder/
-│   │   │   │   ├── CreateOrderCommand.cs
-│   │   │   │   ├── CreateOrderHandler.cs
-│   │   │   │   └── CreateOrderValidator.cs
 │   │   │   └── RegisterUser/
-│   │   │       ├── RegisterUserCommand.cs
-│   │   │       ├── RegisterUserHandler.cs
-│   │   │       └── RegisterUserValidator.cs
 │   │   ├── Queries/
 │   │   │   └── GetOrderById/
-│   │   │       ├── GetOrderByIdQuery.cs
-│   │   │       └── GetOrderByIdHandler.cs
 │   │   ├── Behaviors/
 │   │   │   ├── ValidationBehavior.cs  ← Pipeline MediatR
 │   │   │   └── LoggingBehavior.cs     ← Stopwatch por request
 │   │   └── Common/
-│   │       └── Result.cs              ← Result<T> pattern (sin excepciones)
+│   │       └── Result.cs              ← Result<T> (sin excepciones para errores de negocio)
 │   │
 │   ├── CleanArch.Infrastructure/      ← Implementaciones técnicas
 │   │   ├── Persistence/
 │   │   │   ├── AppDbContext.cs        # Despacha domain events post-SaveChanges
 │   │   │   ├── Configurations/        # IEntityTypeConfiguration por entidad
-│   │   │   ├── Repositories/
-│   │   │   │   ├── UserRepository.cs
-│   │   │   │   └── OrderRepository.cs
-│   │   │   └── Migrations/
+│   │   │   └── Repositories/
 │   │   ├── Services/
 │   │   │   └── PasswordHasher.cs      # PBKDF2-SHA256 con salt
 │   │   └── DependencyInjection.cs
 │   │
 │   └── CleanArch.WebApi/              ← Capa de presentación
 │       ├── Controllers/
-│       │   ├── OrdersController.cs
-│       │   └── UsersController.cs
 │       ├── Middleware/
-│       │   └── ErrorHandlingMiddleware.cs  # 422/404/400 por tipo de excepción
-│       ├── Program.cs                 # Serilog + auto-migrate en dev
-│       └── appsettings.json
+│       │   └── ErrorHandlingMiddleware.cs  # 422 / 404 / 400 por tipo de excepción
+│       └── Program.cs                 # Serilog + auto-migrate en dev
 │
 └── tests/
-    ├── CleanArch.Domain.Tests/        # Lógica de dominio pura (sin mocks)
-    ├── CleanArch.Application.Tests/   # Handlers con Moq + FluentAssertions
+    ├── CleanArch.Domain.Tests/        # Lógica de dominio pura — sin mocks necesarios
+    ├── CleanArch.Application.Tests/   # Handlers — Moq + FluentAssertions
     └── CleanArch.Integration.Tests/   # EF Core + SQLite in-memory
 ```
 
@@ -363,10 +405,8 @@ cd dotnet-clean-arch
 
 docker-compose up -d
 
-# La API estará disponible en:
-# https://localhost:7001
-# http://localhost:5001
-# Swagger UI: https://localhost:7001/swagger
+# API disponible en:
+# https://localhost:7001/swagger
 ```
 
 #### Sin Docker
@@ -376,7 +416,9 @@ docker-compose up -d
 docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=dev123 postgres:15
 
 # Aplicar migraciones
-dotnet ef database update --project src/CleanArch.Infrastructure --startup-project src/CleanArch.WebApi
+dotnet ef database update \
+  --project src/CleanArch.Infrastructure \
+  --startup-project src/CleanArch.WebApi
 
 # Correr la API
 dotnet run --project src/CleanArch.WebApi
@@ -394,25 +436,24 @@ dotnet run --project src/CleanArch.WebApi
 | **Unit of Work** | EF Core | Transacciones atómicas |
 | **Domain Events** | MediatR | Desacoplamiento de efectos secundarios |
 | **Result Pattern** | Custom | Manejo de errores sin excepciones |
-| **Value Objects** | Domain | Inmutabilidad y validación |
+| **Value Objects** | Domain | Inmutabilidad y auto-validación |
 
 ---
 
 ### Ejemplo CQRS
 
 ```csharp
-// Command
+// Command — record plano, sin lógica
 public record CreateOrderCommand(
     Guid UserId,
     List<OrderItemDto> Items
 ) : IRequest<Result<Guid>>;
 
-// Handler
+// Handler — toda la lógica de negocio vive aquí
 public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(
-        CreateOrderCommand request,
-        CancellationToken cancellationToken)
+        CreateOrderCommand request, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetByIdAsync(request.UserId);
         if (user is null)
@@ -422,8 +463,8 @@ public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, Result<Gui
 
         await _orderRepository.AddAsync(order);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // Domain events publicados automáticamente después de SaveChanges
 
-        // Domain events se publican automáticamente después de SaveChanges
         return Result.Success(order.Id);
     }
 }
@@ -434,11 +475,48 @@ public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, Result<Gui
 ### Correr Tests
 
 ```bash
-# Correr todos los tests
+# Correr todos los proyectos de test
 dotnet test
 
-# Con cobertura
-dotnet test --collect:"XPlat Code Coverage"
+# Output detallado con nombres de test
+dotnet test --verbosity normal
+
+# Con reporte de cobertura (genera XML)
+dotnet test --collect:"XPlat Code Coverage" --results-directory ./coverage
+
+# Proyecto específico
+dotnet test tests/CleanArch.Application.Tests
+dotnet test tests/CleanArch.Domain.Tests
+
+# Watch mode — re-corre en cada guardado de archivo
+dotnet watch test --project tests/CleanArch.Application.Tests
+```
+
+| Proyecto de test | Tipo | Herramientas | Qué cubre |
+|---|---|---|---|
+| `CleanArch.Domain.Tests` | Unit | xUnit | Value Objects, máquina de estados de Order, reglas de dominio — sin mocks |
+| `CleanArch.Application.Tests` | Unit | xUnit + Moq + FluentAssertions | Handlers de Commands/Queries, validation behaviors |
+| `CleanArch.Integration.Tests` | Integración | EF Core + SQLite in-memory | Implementaciones de repositorios, constraints de BD |
+
+**Ejemplo de test:**
+
+```csharp
+[Fact]
+public void Order_Confirm_WhenPending_ShouldTransitionToConfirmed()
+{
+    // Arrange
+    var order = Order.Create(Guid.NewGuid(), new List<OrderItem>
+    {
+        OrderItem.Create("Producto A", 2, Money.From(10.00m, "USD"))
+    });
+
+    // Act
+    order.Confirm();
+
+    // Assert
+    order.Status.Should().Be(OrderStatus.Confirmed);
+    order.UpdatedAt.Should().NotBeNull();
+}
 ```
 
 ---
