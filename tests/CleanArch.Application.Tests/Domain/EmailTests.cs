@@ -1,6 +1,7 @@
 using CleanArch.Domain.Exceptions;
 using CleanArch.Domain.ValueObjects;
 using FluentAssertions;
+using Xunit;
 
 namespace CleanArch.Application.Tests.Domain;
 
