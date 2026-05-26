@@ -6,6 +6,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com)
 [![xUnit](https://img.shields.io/badge/xUnit-5D4F85?style=flat-square)](https://xunit.net)
+[![CI](https://github.com/cdgutierrez6/dotnet-clean-arch/actions/workflows/ci.yml/badge.svg)](https://github.com/cdgutierrez6/dotnet-clean-arch/actions/workflows/ci.yml)
 
 ---
 
