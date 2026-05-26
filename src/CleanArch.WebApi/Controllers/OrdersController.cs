@@ -1,12 +1,14 @@
 using CleanArch.Application.Commands.CreateOrder;
 using CleanArch.Application.Queries.GetOrderById;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CleanArch.WebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public sealed class OrdersController(IMediator mediator) : ControllerBase
 {
     [HttpGet("{id:guid}")]
