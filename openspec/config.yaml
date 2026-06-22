@@ -1,0 +1,7 @@
+schema: spec-driven
+context: |
+  dotnet-clean-arch: Template enterprise de Clean Architecture con C# .NET 8.
+  Stack: ASP.NET Core Web API, CQRS con MediatR, FluentValidation, EF Core + SQL Server, Serilog, xUnit.
+  Estructura: src/ (Domain, Application, Infrastructure, API), tests/ (Unit, Integration).
+  Patrón: Domain (entidades, value objects, interfaces) → Application (Commands/Queries/Handlers, pipeline behaviors) → Infrastructure (EF Core DbContext, repos) → API (controllers, middleware).
+  Objetivo: template de referencia para proyectos enterprise .NET 8 con arquitectura limpia y patrones CQRS.
