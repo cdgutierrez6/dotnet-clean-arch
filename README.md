@@ -1,4 +1,4 @@
-# .NET 8 Clean Architecture Template — Enterprise Ready
+# .NET 8 Clean Architecture — Enterprise Reference Template
 
 [![.NET](https://img.shields.io/badge/.NET_8-5C2D91?style=flat-square&logo=.net&logoColor=white)](https://dotnet.microsoft.com)
 [![C#](https://img.shields.io/badge/C%23_12-239120?style=flat-square&logo=c-sharp&logoColor=white)](https://docs.microsoft.com/en-us/dotnet/csharp)
@@ -13,7 +13,9 @@
 <details open>
 <summary><h2>🇺🇸 English</h2></summary>
 
-Reference template for enterprise APIs in **.NET 8** with Clean Architecture, CQRS, MediatR and EF Core. Based on patterns applied in financial management and vehicle telemetry systems running in production.
+Reference template for enterprise APIs in **.NET 8** with Clean Architecture, CQRS, MediatR and EF Core. It applies the same patterns I used building real-time telemetry microservices at Satrack, packaged here as a self-contained reference.
+
+> **Status & Scope** — This is a reference implementation / portfolio template, **not** a production service. There are no live users, SLAs or production data; the goal is to show a clean, testable .NET 8 architecture end to end.
 
 ---
 
@@ -275,9 +277,9 @@ public void Email_Validation_ShouldMatchExpected(string value, bool isValid)
 
 ---
 
-### Production Context
+### Background
 
-This architecture was applied in payment management and transaction processing systems at **INGENEO** and **DOCTUS** (2019–2022), where separation of concerns and testability were critical for regulatory compliance.
+The patterns in this template mirror those I applied building real-time telemetry microservices at **Satrack** (2022–2025), where Clean Architecture, DDD and CQRS/MediatR kept a high-throughput system testable and maintainable. This repository packages those patterns as a clean, self-contained reference — it is a template, not that production system.
 
 ---
 
@@ -294,7 +296,9 @@ This architecture was applied in payment management and transaction processing s
 <details>
 <summary><h2>🇨🇴 Español</h2></summary>
 
-Template de referencia para APIs enterprise en **.NET 8** con Clean Architecture, CQRS, MediatR y EF Core. Basado en patrones implementados en sistemas de gestión financiera y telemetría vehicular en producción.
+Template de referencia para APIs enterprise en **.NET 8** con Clean Architecture, CQRS, MediatR y EF Core. Aplica los mismos patrones que usé construyendo microservicios de telemetría en tiempo real en Satrack, empaquetados aquí como referencia autocontenida.
+
+> **Estado y Alcance** — Es una implementación de referencia / template de portafolio, **no** un servicio en producción. No hay usuarios reales, SLAs ni datos productivos; el objetivo es mostrar una arquitectura .NET 8 limpia y testeable de punta a punta.
 
 ---
 
@@ -536,9 +540,9 @@ public void Order_Confirm_WhenPending_ShouldTransitionToConfirmed()
 
 ---
 
-### Contexto de Producción
+### Contexto
 
-Esta arquitectura fue aplicada en sistemas de gestión de pagos y procesamiento de transacciones en **INGENEO** y **DOCTUS** (2019–2022), donde la separación de responsabilidades y la testabilidad eran críticas para el cumplimiento regulatorio.
+Los patrones de este template reflejan los que apliqué construyendo microservicios de telemetría en tiempo real en **Satrack** (2022–2025), donde Clean Architecture, DDD y CQRS/MediatR mantuvieron testeable y mantenible un sistema de alto volumen. Este repositorio empaqueta esos patrones como una referencia limpia y autocontenida — es un template, no ese sistema de producción.
 
 ---
 
